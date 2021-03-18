@@ -11,10 +11,15 @@ namespace ModelUpgrade.Core
     {
         public DataModel() { }
 
-        public DataModel(IVersionModel model, Func<IVersionModel, string> func)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DataModel"/> class.
+        /// </summary>
+        /// <param name="model">The model.</param>
+        /// <param name="parseFunc">The parse function.</param>
+        public DataModel(IVersionModel model, Func<IVersionModel, string> parseFunc)
         {
             Id = model.GetId();
-            Data = func(model);
+            Data = parseFunc(model);
             ModelName = model.GetModelName();
         }
 

@@ -3,20 +3,28 @@ using System.Linq;
 
 namespace ModelUpgrade.Core
 {
+    /// <summary>
+    /// Helps different version models convert between <see cref="DataModel"/> and the newest version model.
+    /// </summary>
+    /// <typeparam name="TNewestModel">The type of <see cref="IVersionModel"/>.</typeparam>
     public sealed class ModelConverter<TNewestModel>
         where TNewestModel : IVersionModel
     {
         private readonly IModelUpgrade _modelUpgrade;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ModelConverter{TNewestModel}"/> class.
+        /// </summary>
+        /// <param name="modelUpgrade">The model upgrade.</param>
         public ModelConverter(IModelUpgrade modelUpgrade)
         {
             _modelUpgrade = modelUpgrade;
         }
 
         /// <summary>
-        /// Parses IVersionModel to data model.
+        /// Parses <see cref="IVersionModel"/> to <see cref="DataModel"/>.
         /// </summary>
-        /// <param name="model">The model.</param>
+        /// <param name="model"><see cref="IVersionModel"/></param>
         /// <returns></returns>
         public DataModel Parse(IVersionModel model)
         {
@@ -36,9 +44,9 @@ namespace ModelUpgrade.Core
         }
 
         /// <summary>
-        /// Parses data model to IVersionModel.
+        /// Parses <see cref="DataModel"/> to <see cref="IVersionModel"/>.
         /// </summary>
-        /// <param name="model">The model.</param>
+        /// <param name="model"><see cref="DataModel"/></param>
         /// <returns></returns>
         public TNewestModel Parse(DataModel model)
         {
@@ -47,6 +55,19 @@ namespace ModelUpgrade.Core
             var obj = _modelUpgrade.Deserialize<TNewestModel>(newModel.Data);
 
             return obj;
+        }
+
+        /// <summary>
+        /// Upgrades your old version model to the newest version model.
+        /// </summary>
+        /// <typeparam name="T"><see cref="IVersionModel"/></typeparam>
+        /// <param name="model">The old version model.</param>
+        /// <returns></returns>
+        public TNewestModel Upgrade<T>(T model) where T : IVersionModel
+        {
+            var dataModel = new DataModel(model, _modelUpgrade.Serialize);
+
+            return Parse(dataModel);
         }
 
         private readonly Lazy<Type[]> _versionTypes = new Lazy<Type[]>(() =>
