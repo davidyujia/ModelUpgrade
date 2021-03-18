@@ -33,7 +33,7 @@ namespace SampleConsole
         }
     }
 
-    class MyModelUpgrade : IModelUpgrade
+    class MyModelUpgrade : ModelUpgrade.Core.ModelUpgrade
     {
         public T Deserialize<T>(string s) where T : IVersionModel
         {

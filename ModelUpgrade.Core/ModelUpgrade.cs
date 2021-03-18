@@ -7,7 +7,7 @@ namespace ModelUpgrade.Core
     /// <summary>
     /// Model upgrade interface
     /// </summary>
-    public interface IModelUpgrade
+    public abstract class ModelUpgrade
     {
         /// <summary>
         /// Deserializes the string.
@@ -15,14 +15,14 @@ namespace ModelUpgrade.Core
         /// <typeparam name="T"></typeparam>
         /// <param name="s">string</param>
         /// <returns></returns>
-        T Deserialize<T>(string s) where T : IVersionModel;
+        public abstract T Deserialize<T>(string s) where T : IVersionModel;
 
         /// <summary>
         /// Serializes the specified model.
         /// </summary>
         /// <param name="model">The model.</param>
         /// <returns></returns>
-        string Serialize(IVersionModel model);
+        public abstract string Serialize(IVersionModel model);
 
         /// <summary>
         /// Upgrades the specified model.
@@ -30,6 +30,11 @@ namespace ModelUpgrade.Core
         /// <typeparam name="T"></typeparam>
         /// <param name="model">The model.</param>
         /// <returns></returns>
-        IVersionModel Upgrade<T>(T model) where T : IVersionModel;
+        public IVersionModel Upgrade<T>(T model) where T : IVersionModel
+        {
+            return null;
+        }
+
+
     }
 }

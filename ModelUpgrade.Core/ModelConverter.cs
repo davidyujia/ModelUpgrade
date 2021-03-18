@@ -7,16 +7,15 @@ namespace ModelUpgrade.Core
     /// Helps different version models convert between <see cref="DataModel"/> and the newest version model.
     /// </summary>
     /// <typeparam name="TNewestModel">The type of <see cref="IVersionModel"/>.</typeparam>
-    public sealed class ModelConverter<TNewestModel>
-        where TNewestModel : IVersionModel
+    public sealed class ModelConverter<TNewestModel> where TNewestModel : IVersionModel
     {
-        private readonly IModelUpgrade _modelUpgrade;
+        private readonly ModelUpgrade _modelUpgrade;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ModelConverter{TNewestModel}"/> class.
         /// </summary>
         /// <param name="modelUpgrade">The model upgrade.</param>
-        public ModelConverter(IModelUpgrade modelUpgrade)
+        public ModelConverter(ModelUpgrade modelUpgrade)
         {
             _modelUpgrade = modelUpgrade;
         }
@@ -85,7 +84,7 @@ namespace ModelUpgrade.Core
                 throw new Exception($"Can't find IVersionModel type: \'{model.ModelName}\'");
             }
 
-            var getConverterMethod = typeof(IModelUpgrade).GetMethod(nameof(IModelUpgrade.Deserialize));
+            var getConverterMethod = typeof(ModelUpgrade).GetMethod(nameof(ModelUpgrade.Deserialize));
 
             if (getConverterMethod == null)
             {
