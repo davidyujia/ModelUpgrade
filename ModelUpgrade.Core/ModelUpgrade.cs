@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ModelUpgrade.Core
 {
     public abstract class ModelUpgradeChain
     {
-        protected readonly ModelUpgradeChain LastVersionUpgrade;
+        internal readonly ModelUpgradeChain LastVersionUpgrade;
 
         protected ModelUpgradeChain(ModelUpgradeChain lastVersionUpgrade)
         {
