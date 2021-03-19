@@ -20,8 +20,29 @@ namespace ModelUpgrade.Core
     {
         protected ModelUpgrade(ModelUpgradeChain lastVersionUpgrade) : base(lastVersionUpgrade)
         {
+            CheckLastVersionUpgrade(lastVersionUpgrade);
         }
 
+        private static void CheckLastVersionUpgrade(ModelUpgradeChain lastVersionUpgrade)
+        {
+            if (lastVersionUpgrade == null)
+            {
+                return;
+            }
+
+            var lastGenericArguments = lastVersionUpgrade?.GetType().BaseType?.GetGenericArguments() ?? Array.Empty<Type>();
+
+            if (lastGenericArguments.Length > 0 && lastGenericArguments[0] != typeof(TPreviousVersion))
+            {
+                throw new ArgumentException($"{lastVersionUpgrade.GetType()} can't convert model to \"{typeof(TPreviousVersion).FullName}\".");
+            }
+        }
+
+        /// <summary>
+        /// Upgrades <see cref="TPreviousVersion"/> to <see cref="TTargetVersion"/>.
+        /// </summary>
+        /// <param name="model">The model.</param>
+        /// <returns></returns>
         protected abstract TTargetVersion UpgradeFunc(TPreviousVersion model);
 
         internal override IVersionModel Upgrade(IVersionModel model)
@@ -31,13 +52,13 @@ namespace ModelUpgrade.Core
                 throw new ArgumentNullException(nameof(model));
             }
 
-            IVersionModel result = null;
+            var result = model;
 
-            if (!(model is TPreviousVersion) && LastVersionUpgrade != null)
+            if (!(result is TPreviousVersion) && LastVersionUpgrade != null)
             {
-                result = LastVersionUpgrade.Upgrade(model);
+                result = LastVersionUpgrade.Upgrade(result);
             }
-
+            
             return result is TPreviousVersion previousVersion ? UpgradeFunc(previousVersion) : model;
         }
     }
