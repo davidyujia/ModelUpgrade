@@ -4,37 +4,43 @@ using System.Text;
 
 namespace ModelUpgrade.Core
 {
-    /// <summary>
-    /// Model upgrade interface
-    /// </summary>
-    public abstract class ModelUpgrade
+    public abstract class ModelUpgradeChain
     {
-        /// <summary>
-        /// Deserializes the string.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="s">string</param>
-        /// <returns></returns>
-        public abstract T Deserialize<T>(string s) where T : IVersionModel;
+        protected readonly ModelUpgradeChain LastVersionUpgrade;
 
-        /// <summary>
-        /// Serializes the specified model.
-        /// </summary>
-        /// <param name="model">The model.</param>
-        /// <returns></returns>
-        public abstract string Serialize(IVersionModel model);
-
-        /// <summary>
-        /// Upgrades the specified model.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="model">The model.</param>
-        /// <returns></returns>
-        public IVersionModel Upgrade<T>(T model) where T : IVersionModel
+        protected ModelUpgradeChain(ModelUpgradeChain lastVersionUpgrade)
         {
-            return null;
+            LastVersionUpgrade = lastVersionUpgrade;
         }
 
+        internal abstract IVersionModel Upgrade(IVersionModel model);
+    }
 
+    public abstract class ModelUpgrade<TTargetVersion, TPreviousVersion> : ModelUpgradeChain
+        where TTargetVersion : IVersionModel
+        where TPreviousVersion : IVersionModel
+    {
+        protected ModelUpgrade(ModelUpgradeChain lastVersionUpgrade) : base(lastVersionUpgrade)
+        {
+        }
+
+        protected abstract TTargetVersion UpgradeFunc(TPreviousVersion model);
+
+        internal override IVersionModel Upgrade(IVersionModel model)
+        {
+            if (model == null)
+            {
+                throw new ArgumentNullException(nameof(model));
+            }
+
+            IVersionModel result = null;
+
+            if (!(model is TPreviousVersion) && LastVersionUpgrade != null)
+            {
+                result = LastVersionUpgrade.Upgrade(model);
+            }
+
+            return result is TPreviousVersion previousVersion ? UpgradeFunc(previousVersion) : model;
+        }
     }
 }

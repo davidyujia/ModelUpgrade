@@ -8,20 +8,24 @@ namespace SampleConsole
     {
         static void Main(string[] args)
         {
+            // Create a model upgrade chain, this chain must from oldest version to latest version.
+            var v1Upgrade = new Version1Upgrade(null);
+            var v2Upgrade = new Version2Upgrade(v1Upgrade);
+
             // Create a converter.
-            var modelUpgrade = new MyModelUpgrade();
-            var converter = new ModelConverter<Version3>(modelUpgrade);
+            var modelSerializer = new MyModelSerializer();
+            var converter = new ModelConverter<Version3>(modelSerializer, v2Upgrade);
 
             // Sample data, it's from database.
             var dbData = new DataModel(new Version1
             {
                 Uid = "TestV1",
                 Name = "Test1"
-            }, modelUpgrade.Serialize);
+            }, modelSerializer.Serialize);
 
             // Parses your saved data to the v3 model.
             var v3 = converter.Parse(dbData);
-            
+
             // Parses v3 model to data model for saving.
             var v3DbModel = converter.Parse(v3);
 
@@ -30,47 +34,52 @@ namespace SampleConsole
                 Uid = "TestV1",
                 Name = "Test1"
             });
+
         }
     }
 
-    class MyModelUpgrade : ModelUpgrade.Core.ModelUpgrade
+    class Version1Upgrade : ModelUpgrade<Version2, Version1>
     {
-        public T Deserialize<T>(string s) where T : IVersionModel
+        public Version1Upgrade(ModelUpgradeChain lastVersionUpgrade) : base(lastVersionUpgrade)
+        {
+        }
+
+        protected override Version2 UpgradeFunc(Version1 model)
+        {
+            return new Version2
+            {
+                Id = model.Uid,
+                ProjectName = model.Name
+            };
+        }
+    }
+
+    class Version2Upgrade : ModelUpgrade<Version3, Version2>
+    {
+        public Version2Upgrade(ModelUpgradeChain lastVersionUpgrade) : base(lastVersionUpgrade)
+        {
+        }
+
+        protected override Version3 UpgradeFunc(Version2 model)
+        {
+            return new Version3
+            {
+                ProjectId = model.Id,
+                ProjectName = model.ProjectName
+            };
+        }
+    }
+
+    class MyModelSerializer : ModelSerializer
+    {
+        public override T Deserialize<T>(string s)
         {
             return JsonSerializer.Deserialize<T>(s);
         }
 
-        public string Serialize(IVersionModel model)
+        public override string Serialize(IVersionModel model)
         {
             return JsonSerializer.Serialize((object)model);
-        }
-
-        public IVersionModel Upgrade<T>(T model) where T : IVersionModel
-        {
-            return model switch
-            {
-                Version1 v1 => V1ToV2(v1),
-                Version2 v2 => V2ToV3(v2),
-                _ => throw new Exception()
-            };
-        }
-
-        private static Version2 V1ToV2(Version1 v1)
-        {
-            return new Version2
-            {
-                Id = v1.Uid,
-                ProjectName = v1.Name
-            };
-        }
-
-        private static Version3 V2ToV3(Version2 v2)
-        {
-            return new Version3
-            {
-                ProjectId = v2.Id,
-                ProjectName = v2.ProjectName
-            };
         }
     }
 

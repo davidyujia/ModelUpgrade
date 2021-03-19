@@ -6,24 +6,27 @@ namespace ModelUpgrade.Core
     /// <summary>
     /// Helps different version models convert between <see cref="DataModel"/> and the newest version model.
     /// </summary>
-    /// <typeparam name="TNewestModel">The type of <see cref="IVersionModel"/>.</typeparam>
-    public sealed class ModelConverter<TNewestModel> where TNewestModel : IVersionModel
+    /// <typeparam name="TLatestVersionModel">The type of <see cref="IVersionModel"/>.</typeparam>
+    public sealed class ModelConverter<TLatestVersionModel> where TLatestVersionModel : IVersionModel
     {
-        private readonly ModelUpgrade _modelUpgrade;
+        private readonly ModelSerializer _modelSerializer;
+        private readonly ModelUpgradeChain _modelUpgrade;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ModelConverter{TNewestModel}"/> class.
+        /// Initializes a new instance of the <see cref="ModelConverter{TLatestVersionModel}" /> class.
         /// </summary>
+        /// <param name="modelSerializer">The model upgrade.</param>
         /// <param name="modelUpgrade">The model upgrade.</param>
-        public ModelConverter(ModelUpgrade modelUpgrade)
+        public ModelConverter(ModelSerializer modelSerializer, ModelUpgradeChain modelUpgrade)
         {
+            _modelSerializer = modelSerializer;
             _modelUpgrade = modelUpgrade;
         }
 
         /// <summary>
-        /// Parses <see cref="IVersionModel"/> to <see cref="DataModel"/>.
+        /// Parses <see cref="IVersionModel" /> to <see cref="DataModel" />.
         /// </summary>
-        /// <param name="model"><see cref="IVersionModel"/></param>
+        /// <param name="model"><see cref="IVersionModel" /></param>
         /// <returns></returns>
         public DataModel Parse(IVersionModel model)
         {
@@ -32,12 +35,12 @@ namespace ModelUpgrade.Core
                 return null;
             }
 
-            model = UpgradeToNewest(model);
+            model = UpgradeToLatest(model);
 
             return new DataModel
             {
                 Id = model.GetId(),
-                Data = _modelUpgrade.Serialize(model),
+                Data = _modelSerializer.Serialize(model),
                 ModelName = model.GetModelName()
             };
         }
@@ -47,11 +50,11 @@ namespace ModelUpgrade.Core
         /// </summary>
         /// <param name="model"><see cref="DataModel"/></param>
         /// <returns></returns>
-        public TNewestModel Parse(DataModel model)
+        public TLatestVersionModel Parse(DataModel model)
         {
-            var newModel = GetNewest(model);
+            var newModel = GetLatest(model);
 
-            var obj = _modelUpgrade.Deserialize<TNewestModel>(newModel.Data);
+            var obj = _modelSerializer.Deserialize<TLatestVersionModel>(newModel.Data);
 
             return obj;
         }
@@ -62,9 +65,9 @@ namespace ModelUpgrade.Core
         /// <typeparam name="T"><see cref="IVersionModel"/></typeparam>
         /// <param name="model">The old version model.</param>
         /// <returns></returns>
-        public TNewestModel Upgrade<T>(T model) where T : IVersionModel
+        public TLatestVersionModel Upgrade<T>(T model) where T : IVersionModel
         {
-            var dataModel = new DataModel(model, _modelUpgrade.Serialize);
+            var dataModel = new DataModel(model, _modelSerializer.Serialize);
 
             return Parse(dataModel);
         }
@@ -74,8 +77,8 @@ namespace ModelUpgrade.Core
             return AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes())
                 .Where(x => typeof(IVersionModel).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract).ToArray();
         });
-
-        private DataModel GetNewest(DataModel model)
+        
+        private DataModel GetLatest(DataModel model)
         {
             var modelType = _versionTypes.Value.FirstOrDefault(x => string.Equals(x.Name, model.ModelName, StringComparison.CurrentCultureIgnoreCase));
 
@@ -84,7 +87,7 @@ namespace ModelUpgrade.Core
                 throw new Exception($"Can't find IVersionModel type: \'{model.ModelName}\'");
             }
 
-            var getConverterMethod = typeof(ModelUpgrade).GetMethod(nameof(ModelUpgrade.Deserialize));
+            var getConverterMethod = typeof(ModelSerializer).GetMethod(nameof(ModelSerializer.Deserialize));
 
             if (getConverterMethod == null)
             {
@@ -98,14 +101,14 @@ namespace ModelUpgrade.Core
                 throw new Exception("Can't find Generics Method 'IDataExtension.Deserialize'");
             }
 
-            if (!(method.Invoke(_modelUpgrade, new object[] { model.Data }) is IVersionModel versionModel))
+            if (!(method.Invoke(_modelSerializer, new object[] { model.Data }) is IVersionModel versionModel))
             {
                 throw new Exception("Converted model's type is not IVersionModel");
             }
 
-            var upgradedModel = UpgradeToNewest(versionModel);
+            var upgradedModel = UpgradeToLatest(versionModel);
 
-            var modelData = _modelUpgrade.Serialize(upgradedModel);
+            var modelData = _modelSerializer.Serialize(upgradedModel);
 
             return new DataModel
             {
@@ -115,14 +118,16 @@ namespace ModelUpgrade.Core
             };
         }
 
-        private TNewestModel UpgradeToNewest(IVersionModel model)
+        private TLatestVersionModel UpgradeToLatest(IVersionModel model)
         {
-            while (!(model is TNewestModel))
+            var result = _modelUpgrade.Upgrade(model);
+
+            if (!(result is TLatestVersionModel))
             {
-                model = _modelUpgrade.Upgrade(model);
+                throw new Exception($"{model.GetType().FullName} can't upgrade to {typeof(TLatestVersionModel).FullName}, please check your ModelUpgradeChain is complete.");
             }
 
-            return (TNewestModel)model;
+            return (TLatestVersionModel)result;
         }
     }
 }
