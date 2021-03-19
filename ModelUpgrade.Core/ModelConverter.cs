@@ -9,7 +9,7 @@ namespace ModelUpgrade.Core
     /// <typeparam name="TLatestVersionModel">The type of <see cref="IVersionModel"/>.</typeparam>
     public sealed class ModelConverter<TLatestVersionModel> where TLatestVersionModel : IVersionModel
     {
-        private readonly ModelSerializer _modelSerializer;
+        private readonly IModelSerializer _modelSerializer;
         private readonly ModelUpgradeChain _modelUpgrade;
 
         /// <summary>
@@ -17,10 +17,12 @@ namespace ModelUpgrade.Core
         /// </summary>
         /// <param name="modelSerializer">The model upgrade.</param>
         /// <param name="modelUpgrade">The model upgrade.</param>
-        public ModelConverter(ModelSerializer modelSerializer, ModelUpgradeChain modelUpgrade)
+        public ModelConverter(IModelSerializer modelSerializer, ModelUpgradeChain modelUpgrade)
         {
             _modelSerializer = modelSerializer;
             _modelUpgrade = modelUpgrade;
+
+            modelUpgrade?.CheckModelUpgradeChain(modelUpgrade, typeof(TLatestVersionModel));
         }
 
         /// <summary>
@@ -35,7 +37,7 @@ namespace ModelUpgrade.Core
                 return null;
             }
 
-            model = UpgradeToLatest(model);
+            model = Upgrade(model);
 
             return new DataModel
             {
@@ -52,7 +54,7 @@ namespace ModelUpgrade.Core
         /// <returns></returns>
         public TLatestVersionModel Parse(DataModel model)
         {
-            var newModel = GetLatest(model);
+            var newModel = Upgrade(model);
 
             var obj = _modelSerializer.Deserialize<TLatestVersionModel>(newModel.Data);
 
@@ -67,9 +69,19 @@ namespace ModelUpgrade.Core
         /// <returns></returns>
         public TLatestVersionModel Upgrade<T>(T model) where T : IVersionModel
         {
-            var dataModel = new DataModel(model, _modelSerializer.Serialize);
+            if (model is TLatestVersionModel currentVersion)
+            {
+                return currentVersion;
+            }
 
-            return Parse(dataModel);
+            var result = _modelUpgrade.Upgrade(model);
+
+            if (!(result is TLatestVersionModel))
+            {
+                throw new Exception($"{model.GetType().FullName} can't upgrade to {typeof(TLatestVersionModel).FullName}, please check your ModelUpgradeChain is complete.");
+            }
+
+            return (TLatestVersionModel)result;
         }
 
         private readonly Lazy<Type[]> _versionTypes = new Lazy<Type[]>(() =>
@@ -77,28 +89,28 @@ namespace ModelUpgrade.Core
             return AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes())
                 .Where(x => typeof(IVersionModel).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract).ToArray();
         });
-        
-        private DataModel GetLatest(DataModel model)
+
+        private DataModel Upgrade(DataModel model)
         {
             var modelType = _versionTypes.Value.FirstOrDefault(x => string.Equals(x.Name, model.ModelName, StringComparison.CurrentCultureIgnoreCase));
 
             if (modelType == null)
             {
-                throw new Exception($"Can't find IVersionModel type: \'{model.ModelName}\'");
+                throw new Exception($"Can't find IVersionModel type: \"{model.ModelName}\"");
             }
 
-            var getConverterMethod = typeof(ModelSerializer).GetMethod(nameof(ModelSerializer.Deserialize));
+            var getConverterMethod = typeof(IModelSerializer).GetMethod(nameof(IModelSerializer.Deserialize));
 
             if (getConverterMethod == null)
             {
-                throw new Exception("Can't find Method 'IDataExtension.Deserialize'");
+                throw new Exception("Can't find Method \"IModelSerializer.Deserialize\"");
             }
 
             var method = getConverterMethod.MakeGenericMethod(modelType);
 
             if (method == null)
             {
-                throw new Exception("Can't find Generics Method 'IDataExtension.Deserialize'");
+                throw new Exception("Can't find Generics Method \"IModelSerializer.Deserialize\"");
             }
 
             if (!(method.Invoke(_modelSerializer, new object[] { model.Data }) is IVersionModel versionModel))
@@ -106,7 +118,7 @@ namespace ModelUpgrade.Core
                 throw new Exception("Converted model's type is not IVersionModel");
             }
 
-            var upgradedModel = UpgradeToLatest(versionModel);
+            var upgradedModel = Upgrade(versionModel);
 
             var modelData = _modelSerializer.Serialize(upgradedModel);
 
@@ -116,18 +128,6 @@ namespace ModelUpgrade.Core
                 Data = modelData,
                 ModelName = upgradedModel.GetModelName()
             };
-        }
-
-        private TLatestVersionModel UpgradeToLatest(IVersionModel model)
-        {
-            var result = _modelUpgrade.Upgrade(model);
-
-            if (!(result is TLatestVersionModel))
-            {
-                throw new Exception($"{model.GetType().FullName} can't upgrade to {typeof(TLatestVersionModel).FullName}, please check your ModelUpgradeChain is complete.");
-            }
-
-            return (TLatestVersionModel)result;
         }
     }
 }

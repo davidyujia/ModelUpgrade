@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ModelUpgrade.Core
+﻿namespace ModelUpgrade.Core
 {
     /// <summary>
-    /// Model upgrade
+    /// Model serializer interface
     /// </summary>
-    public abstract class ModelSerializer
+    public interface IModelSerializer
     {
         /// <summary>
         /// Deserializes the string.
@@ -15,13 +11,13 @@ namespace ModelUpgrade.Core
         /// <typeparam name="T"></typeparam>
         /// <param name="s">string</param>
         /// <returns></returns>
-        public abstract T Deserialize<T>(string s) where T : IVersionModel;
+        T Deserialize<T>(string s);
 
         /// <summary>
         /// Serializes the specified model.
         /// </summary>
         /// <param name="model">The model.</param>
         /// <returns></returns>
-        public abstract string Serialize(IVersionModel model);
+        string Serialize(object model);
     }
 }

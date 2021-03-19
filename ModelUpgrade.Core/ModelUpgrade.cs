@@ -12,6 +12,21 @@ namespace ModelUpgrade.Core
         }
 
         internal abstract IVersionModel Upgrade(IVersionModel model);
+
+        internal void CheckModelUpgradeChain(ModelUpgradeChain modelUpgradeChain, Type targetVersionType)
+        {
+            if (modelUpgradeChain == null)
+            {
+                return;
+            }
+
+            var lastGenericArguments = modelUpgradeChain.GetType().BaseType?.GetGenericArguments() ?? Array.Empty<Type>();
+
+            if (lastGenericArguments.Length > 0 && lastGenericArguments[0] != targetVersionType)
+            {
+                throw new ArgumentException($"{modelUpgradeChain.GetType()} can't convert model to \"{targetVersionType.FullName}\".");
+            }
+        }
     }
 
     public abstract class ModelUpgrade<TTargetVersion, TPreviousVersion> : ModelUpgradeChain
@@ -20,22 +35,7 @@ namespace ModelUpgrade.Core
     {
         protected ModelUpgrade(ModelUpgradeChain lastVersionUpgrade) : base(lastVersionUpgrade)
         {
-            CheckLastVersionUpgrade(lastVersionUpgrade);
-        }
-
-        private static void CheckLastVersionUpgrade(ModelUpgradeChain lastVersionUpgrade)
-        {
-            if (lastVersionUpgrade == null)
-            {
-                return;
-            }
-
-            var lastGenericArguments = lastVersionUpgrade?.GetType().BaseType?.GetGenericArguments() ?? Array.Empty<Type>();
-
-            if (lastGenericArguments.Length > 0 && lastGenericArguments[0] != typeof(TPreviousVersion))
-            {
-                throw new ArgumentException($"{lastVersionUpgrade.GetType()} can't convert model to \"{typeof(TPreviousVersion).FullName}\".");
-            }
+            CheckModelUpgradeChain(lastVersionUpgrade, typeof(TPreviousVersion));
         }
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace ModelUpgrade.Core
             {
                 result = LastVersionUpgrade.Upgrade(result);
             }
-            
+
             return result is TPreviousVersion previousVersion ? UpgradeFunc(previousVersion) : model;
         }
     }
