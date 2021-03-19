@@ -22,7 +22,7 @@ namespace ModelUpgrade.Core
             _modelSerializer = modelSerializer;
             _modelUpgrade = modelUpgrade;
 
-            modelUpgrade?.CheckModelUpgradeChain(modelUpgrade, typeof(TLatestVersionModel));
+            modelUpgrade?.CheckModelUpgradeChain(typeof(TLatestVersionModel), modelUpgrade);
         }
 
         /// <summary>

@@ -1,30 +1,43 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ModelUpgrade.Core
 {
     public abstract class ModelUpgradeChain
     {
-        internal readonly ModelUpgradeChain LastVersionUpgrade;
+        internal readonly ModelUpgradeChain[] NextChains;
 
-        protected ModelUpgradeChain(ModelUpgradeChain lastVersionUpgrade)
+        protected ModelUpgradeChain(Type previousVersionType, ModelUpgradeChain mainNextChain, params ModelUpgradeChain[] jumpNextChains)
         {
-            LastVersionUpgrade = lastVersionUpgrade;
+            var list = new List<ModelUpgradeChain> { mainNextChain };
+
+            if (jumpNextChains != null)
+            {
+                list.AddRange(jumpNextChains);
+            }
+
+            list.Reverse();
+
+            NextChains = list.ToArray();
+
+            CheckModelUpgradeChain(previousVersionType, jumpNextChains);
         }
 
         internal abstract IVersionModel Upgrade(IVersionModel model);
 
-        internal void CheckModelUpgradeChain(ModelUpgradeChain modelUpgradeChain, Type targetVersionType)
+        internal void CheckModelUpgradeChain(Type targetVersionType, params ModelUpgradeChain[] modelUpgradeChains)
         {
-            if (modelUpgradeChain == null)
+            if (modelUpgradeChains == null || !modelUpgradeChains.Any())
             {
                 return;
             }
 
-            var lastGenericArguments = modelUpgradeChain.GetType().BaseType?.GetGenericArguments() ?? Array.Empty<Type>();
+            var genericArguments = modelUpgradeChains.Select(modelUpgradeChain => modelUpgradeChain?.GetType().BaseType?.GetGenericArguments() ?? Array.Empty<Type>()).ToArray();
 
-            if (lastGenericArguments.Length > 0 && lastGenericArguments[0] != targetVersionType)
+            if (genericArguments.Any(lastGenericArguments => lastGenericArguments.Length > 0 && lastGenericArguments[0] != targetVersionType))
             {
-                throw new ArgumentException($"{modelUpgradeChain.GetType()} can't convert model to \"{targetVersionType.FullName}\".");
+                throw new ArgumentException($"{modelUpgradeChains.GetType()} can't convert model to \"{targetVersionType.FullName}\".");
             }
         }
     }
@@ -33,9 +46,8 @@ namespace ModelUpgrade.Core
         where TTargetVersion : IVersionModel
         where TPreviousVersion : IVersionModel
     {
-        protected ModelUpgrade(ModelUpgradeChain lastVersionUpgrade) : base(lastVersionUpgrade)
+        protected ModelUpgrade(ModelUpgradeChain mainNextChain, params ModelUpgradeChain[] jumpNextChains) : base(typeof(TPreviousVersion), mainNextChain, jumpNextChains)
         {
-            CheckModelUpgradeChain(lastVersionUpgrade, typeof(TPreviousVersion));
         }
 
         /// <summary>
@@ -52,14 +64,24 @@ namespace ModelUpgrade.Core
                 throw new ArgumentNullException(nameof(model));
             }
 
-            var result = model;
-
-            if (!(result is TPreviousVersion) && LastVersionUpgrade != null)
+            if (model is TPreviousVersion previousVersion)
             {
-                result = LastVersionUpgrade.Upgrade(result);
+                return UpgradeFunc(previousVersion);
             }
 
-            return result is TPreviousVersion previousVersion ? UpgradeFunc(previousVersion) : model;
+            foreach (var next in NextChains)
+            {
+                var result = model;
+
+                result = next.Upgrade(result);
+
+                if (result is TPreviousVersion previousVersion1)
+                {
+                    return UpgradeFunc(previousVersion1);
+                }
+            }
+
+            return model;
         }
     }
 }

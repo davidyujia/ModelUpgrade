@@ -36,24 +36,28 @@ namespace SampleConsole
 
     class Version1Upgrade : ModelUpgrade<Version2, Version1>
     {
-        public Version1Upgrade(ModelUpgradeChain lastVersionUpgrade) : base(lastVersionUpgrade) { }
-
         protected override Version2 UpgradeFunc(Version1 model) => new Version2
         {
             Id = model.Uid,
             ProjectName = model.Name
         };
+
+        public Version1Upgrade(ModelUpgradeChain mainNextChains) : base(mainNextChains)
+        {
+        }
     }
 
     class Version2Upgrade : ModelUpgrade<Version3, Version2>
     {
-        public Version2Upgrade(ModelUpgradeChain lastVersionUpgrade) : base(lastVersionUpgrade) { }
-
         protected override Version3 UpgradeFunc(Version2 model) => new Version3
         {
             ProjectId = model.Id,
             ProjectName = model.ProjectName
         };
+
+        public Version2Upgrade(ModelUpgradeChain mainNextChains) : base(mainNextChains)
+        {
+        }
     }
 
     class MyModelSerializer : IModelSerializer
