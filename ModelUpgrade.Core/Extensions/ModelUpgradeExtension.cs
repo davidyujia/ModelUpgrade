@@ -16,7 +16,7 @@ namespace ModelUpgrade.Core.Extensions
 
             if (genericArguments.Any(lastGenericArguments => lastGenericArguments.Length > 0 && lastGenericArguments[0] != previousVersionType))
             {
-                throw new ArgumentException($"{modelUpgradeChains.GetType()} can't convert model to \"{previousVersionType.FullName}\".");
+                throw new ArgumentException($"{modelUpgradeChains.GetType().FullName} can't convert model to \"{previousVersionType.FullName}\".");
             }
         }
     }

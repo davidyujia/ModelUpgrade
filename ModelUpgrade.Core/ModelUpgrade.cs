@@ -18,7 +18,6 @@ namespace ModelUpgrade.Core
         protected ModelUpgradeChain(Type previousVersionType, params ModelUpgradeChain[] nextChains)
         {
             JumpNextChains = new Dictionary<Type, ModelUpgradeChain>();
-
             _enableUpgradeModelTypeCount = new Dictionary<Type, int> { { previousVersionType, 0 } };
 
             if (nextChains == null)
@@ -28,30 +27,40 @@ namespace ModelUpgrade.Core
 
             foreach (var chain in nextChains)
             {
-                var chainEnableUpgradeModelTypeCount = chain.GetEnableUpgradeModelTypeCount();
-
-                foreach (var typeCountPair in chainEnableUpgradeModelTypeCount)
-                {
-                    var typeCount = typeCountPair.Value + 1;
-
-                    if (!_enableUpgradeModelTypeCount.ContainsKey(typeCountPair.Key))
-                    {
-                        _enableUpgradeModelTypeCount.Add(typeCountPair.Key, typeCount);
-                        JumpNextChains.Add(typeCountPair.Key, chain);
-                        continue;
-                    }
-
-                    if (_enableUpgradeModelTypeCount[typeCountPair.Key] <= typeCount)
-                    {
-                        continue;
-                    }
-
-                    _enableUpgradeModelTypeCount[typeCountPair.Key] = typeCount;
-                    JumpNextChains[typeCountPair.Key] = chain;
-                }
+                Add(chain);
             }
 
             ModelUpgradeExtension.CheckModelUpgradeChain(previousVersionType, nextChains);
+        }
+
+        public void Add(ModelUpgradeChain chain)
+        {
+            var chainEnableUpgradeModelTypeCount = chain.GetEnableUpgradeModelTypeCount();
+
+            foreach (var typeCountPair in chainEnableUpgradeModelTypeCount)
+            {
+                SetTypeCount(chain, typeCountPair.Key, typeCountPair.Value);
+            }
+        }
+
+        private void SetTypeCount(ModelUpgradeChain chain, Type targetType, int targetLength)
+        {
+            var typeCount = targetLength + 1;
+
+            if (!_enableUpgradeModelTypeCount.ContainsKey(targetType))
+            {
+                _enableUpgradeModelTypeCount.Add(targetType, typeCount);
+                JumpNextChains.Add(targetType, chain);
+                return;
+            }
+
+            if (_enableUpgradeModelTypeCount[targetType] <= typeCount)
+            {
+                return;
+            }
+
+            _enableUpgradeModelTypeCount[targetType] = typeCount;
+            JumpNextChains[targetType] = chain;
         }
 
         public abstract IVersionModel Upgrade(IVersionModel model);
