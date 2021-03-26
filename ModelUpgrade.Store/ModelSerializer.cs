@@ -1,4 +1,4 @@
-﻿namespace ModelUpgrade.Core
+﻿namespace ModelUpgrade.Store
 {
     /// <summary>
     /// Model serializer interface

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ModelUpgrade.Core
+namespace ModelUpgrade.Store
 {
     /// <summary>
     /// Data for saving
@@ -14,7 +14,7 @@ namespace ModelUpgrade.Core
         /// </summary>
         /// <param name="model">The model.</param>
         /// <param name="parseFunc">The parse function.</param>
-        public DataModel(IVersionModel model, Func<IVersionModel, string> parseFunc)
+        public DataModel(IVersionStoreModel model, Func<IVersionStoreModel, string> parseFunc)
         {
             Id = model.GetId();
             Data = parseFunc(model);

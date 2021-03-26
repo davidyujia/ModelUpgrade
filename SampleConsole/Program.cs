@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using ModelUpgrade.Core;
+using ModelUpgrade.Store;
 
 namespace SampleConsole
 {
@@ -8,12 +9,8 @@ namespace SampleConsole
         static void Main(string[] args)
         {
             // Create a model upgrade chain, this chain must from oldest version to latest version.
-            var v1UpgradeChain = new Version1Upgrade(null);
+            var v1UpgradeChain = new Version1Upgrade();
             var v2UpgradeChain = new Version2Upgrade(v1UpgradeChain);
-
-            // Create a converter.
-            var modelSerializer = new MyModelSerializer();
-            var converter = new ModelConverter<Version3>(modelSerializer, v2UpgradeChain);
 
             var v1Model = new Version1
             {
@@ -21,14 +18,20 @@ namespace SampleConsole
                 Name = "Test1"
             };
 
+            var v3Model = v2UpgradeChain.Upgrade(v1Model);
+
+            // Create a converter.
+            var modelSerializer = new MyModelSerializer();
+            var converter = new ModelConverter<Version3>(modelSerializer, v2UpgradeChain);
+
             // Sample data, it's from database.
-            var dbData = new DataModel(v1Model, modelSerializer.Serialize);
+            var v1DbData = new DataModel(v1Model, modelSerializer.Serialize);
 
             // Parses your saved data to the v3 model.
-            var v3 = converter.Parse(dbData);
+            var v3ModelFromConvert = converter.Parse(v1DbData);
 
             // Parses v3 model to data model for saving.
-            var v3DbModel = converter.Parse(v3);
+            var v3DbModel = converter.Parse(v3ModelFromConvert);
 
             var v3DbModelFormV1Model = converter.Upgrade(v1Model);
         }
@@ -42,7 +45,7 @@ namespace SampleConsole
             ProjectName = model.Name
         };
 
-        public Version1Upgrade(ModelUpgradeChain mainNextChains) : base(mainNextChains)
+        public Version1Upgrade() : base(null)
         {
         }
     }
@@ -55,7 +58,7 @@ namespace SampleConsole
             ProjectName = model.ProjectName
         };
 
-        public Version2Upgrade(ModelUpgradeChain mainNextChains) : base(mainNextChains)
+        public Version2Upgrade(params ModelUpgradeChain[] nextChains) : base(nextChains)
         {
         }
     }
@@ -73,7 +76,7 @@ namespace SampleConsole
         }
     }
 
-    class Version1 : IVersionModel
+    class Version1 : IVersionStoreModel
     {
         public string GetId()
         {
@@ -89,7 +92,7 @@ namespace SampleConsole
         public string Name { get; set; }
     }
 
-    class Version2 : IVersionModel
+    class Version2 : IVersionStoreModel
     {
         public string GetId()
         {
@@ -104,7 +107,7 @@ namespace SampleConsole
         public string ProjectName { get; set; }
     }
 
-    class Version3 : IVersionModel
+    class Version3 : IVersionStoreModel
     {
         public string GetId()
         {

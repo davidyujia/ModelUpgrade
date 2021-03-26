@@ -1,52 +1,67 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using ModelUpgrade.Core.Extensions;
 
 namespace ModelUpgrade.Core
 {
     public abstract class ModelUpgradeChain
     {
-        internal readonly ModelUpgradeChain[] NextChains;
+        private readonly Dictionary<Type, int> _enableUpgradeModelTypeCount;
 
-        protected ModelUpgradeChain(Type previousVersionType, ModelUpgradeChain mainNextChain, params ModelUpgradeChain[] jumpNextChains)
+        internal Dictionary<Type, int> GetEnableUpgradeModelTypeCount()
         {
-            var list = new List<ModelUpgradeChain> { mainNextChain };
-
-            if (jumpNextChains != null)
-            {
-                list.AddRange(jumpNextChains);
-            }
-
-            list.Reverse();
-
-            NextChains = list.ToArray();
-
-            CheckModelUpgradeChain(previousVersionType, jumpNextChains);
+            return _enableUpgradeModelTypeCount;
         }
 
-        internal abstract IVersionModel Upgrade(IVersionModel model);
+        internal readonly Dictionary<Type, ModelUpgradeChain> JumpNextChains;
 
-        internal void CheckModelUpgradeChain(Type targetVersionType, params ModelUpgradeChain[] modelUpgradeChains)
+        protected ModelUpgradeChain(Type previousVersionType, params ModelUpgradeChain[] nextChains)
         {
-            if (modelUpgradeChains == null || !modelUpgradeChains.Any())
+            JumpNextChains = new Dictionary<Type, ModelUpgradeChain>();
+
+            _enableUpgradeModelTypeCount = new Dictionary<Type, int> { { previousVersionType, 0 } };
+
+            if (nextChains == null)
             {
                 return;
             }
 
-            var genericArguments = modelUpgradeChains.Select(modelUpgradeChain => modelUpgradeChain?.GetType().BaseType?.GetGenericArguments() ?? Array.Empty<Type>()).ToArray();
-
-            if (genericArguments.Any(lastGenericArguments => lastGenericArguments.Length > 0 && lastGenericArguments[0] != targetVersionType))
+            foreach (var chain in nextChains)
             {
-                throw new ArgumentException($"{modelUpgradeChains.GetType()} can't convert model to \"{targetVersionType.FullName}\".");
+                var chainEnableUpgradeModelTypeCount = chain.GetEnableUpgradeModelTypeCount();
+
+                foreach (var typeCountPair in chainEnableUpgradeModelTypeCount)
+                {
+                    var typeCount = typeCountPair.Value + 1;
+
+                    if (!_enableUpgradeModelTypeCount.ContainsKey(typeCountPair.Key))
+                    {
+                        _enableUpgradeModelTypeCount.Add(typeCountPair.Key, typeCount);
+                        JumpNextChains.Add(typeCountPair.Key, chain);
+                        continue;
+                    }
+
+                    if (_enableUpgradeModelTypeCount[typeCountPair.Key] <= typeCount)
+                    {
+                        continue;
+                    }
+
+                    _enableUpgradeModelTypeCount[typeCountPair.Key] = typeCount;
+                    JumpNextChains[typeCountPair.Key] = chain;
+                }
             }
+
+            ModelUpgradeExtension.CheckModelUpgradeChain(previousVersionType, nextChains);
         }
+
+        public abstract IVersionModel Upgrade(IVersionModel model);
     }
 
     public abstract class ModelUpgrade<TTargetVersion, TPreviousVersion> : ModelUpgradeChain
         where TTargetVersion : IVersionModel
         where TPreviousVersion : IVersionModel
     {
-        protected ModelUpgrade(ModelUpgradeChain mainNextChain, params ModelUpgradeChain[] jumpNextChains) : base(typeof(TPreviousVersion), mainNextChain, jumpNextChains)
+        protected ModelUpgrade(ModelUpgradeChain[] nextChains) : base(typeof(TPreviousVersion), nextChains)
         {
         }
 
@@ -57,28 +72,32 @@ namespace ModelUpgrade.Core
         /// <returns></returns>
         protected abstract TTargetVersion UpgradeFunc(TPreviousVersion model);
 
-        internal override IVersionModel Upgrade(IVersionModel model)
+        public override IVersionModel Upgrade(IVersionModel model)
         {
             if (model == null)
             {
                 throw new ArgumentNullException(nameof(model));
             }
 
-            if (model is TPreviousVersion previousVersion)
+            if (model is TPreviousVersion previousVersion1)
             {
-                return UpgradeFunc(previousVersion);
+                return UpgradeFunc(previousVersion1);
             }
 
-            foreach (var next in NextChains)
+            var modelType = model.GetType();
+
+            if (!JumpNextChains.ContainsKey(modelType))
             {
-                var result = model;
+                return model;
+            }
 
-                result = next.Upgrade(result);
+            var chain = JumpNextChains[modelType];
 
-                if (result is TPreviousVersion previousVersion1)
-                {
-                    return UpgradeFunc(previousVersion1);
-                }
+            var upgradedModel = chain.Upgrade(model);
+
+            if (upgradedModel is TPreviousVersion previousVersion2)
+            {
+                return UpgradeFunc(previousVersion2);
             }
 
             return model;
