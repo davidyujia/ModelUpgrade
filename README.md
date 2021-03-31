@@ -1,5 +1,9 @@
 # ModelUpgradeSolution
 
+## How to use
+
+1. Upgrade your model to latest version
+
 ```cs
 // Create a model upgrade chain, this chain must from oldest version to latest version.
 var v1UpgradeChain = new Version1Upgrade();
@@ -14,7 +18,11 @@ var v1Model = new Version1
 
 // Upgrade sample to latest version
 var v3Model = v2UpgradeChain.Upgrade(v1Model);
+```
 
+2. Upgrade your store data with primary key
+
+```cs
 // Create a converter.
 var modelSerializer = new MyModelSerializer();
 var converter = new ModelConverter<Version3>(modelSerializer, v2UpgradeChain);
