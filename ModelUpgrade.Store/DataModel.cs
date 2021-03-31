@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace ModelUpgrade.Core
+namespace ModelUpgrade.Store
 {
     /// <summary>
     /// Data for saving

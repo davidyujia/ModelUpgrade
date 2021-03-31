@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using ModelUpgrade.Core;
 
-namespace ModelUpgrade.Core
+namespace ModelUpgrade.Store
 {
-    /// <summary>
-    /// IVersionModel
-    /// </summary>
     public interface IVersionModel
     {
         /// <summary>
