@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using ModelUpgrade.Core.Extensions;
 
 namespace ModelUpgrade.Core
@@ -27,13 +28,13 @@ namespace ModelUpgrade.Core
 
             foreach (var chain in nextChains)
             {
-                Add(chain);
+                AddBase(chain);
             }
 
             ModelUpgradeExtension.CheckModelUpgradeChain(previousVersionType, nextChains);
         }
 
-        public void Add(ModelUpgradeChain chain)
+        internal void AddBase(ModelUpgradeChain chain)
         {
             var chainEnableUpgradeModelTypeCount = chain.GetEnableUpgradeModelTypeCount();
 
@@ -70,21 +71,19 @@ namespace ModelUpgrade.Core
 
     public abstract class ModelUpgradeChain<TTargetVersion> : ModelUpgradeChain
     {
-        protected ModelUpgradeChain(Type previousVersionType, params ModelUpgradeChain[] nextChains) : base(previousVersionType, nextChains)
-        {
-        }
+        protected ModelUpgradeChain(Type previousVersionType, ModelUpgradeChain[] nextChains) : base(previousVersionType, nextChains) { }
 
         public abstract TTargetVersion Upgrade(object model);
     }
 
     public abstract class ModelUpgrade<TTargetVersion, TPreviousVersion> : ModelUpgradeChain<TTargetVersion>
     {
-        protected ModelUpgrade(ModelUpgradeChain[] nextChains) : base(typeof(TPreviousVersion), nextChains) { }
+        protected ModelUpgrade(ModelUpgradeChain<TPreviousVersion>[] nextChains) : base(typeof(TPreviousVersion), nextChains as ModelUpgradeChain[]) { }
 
         /// <summary>
-        /// Upgrades <see cref="TPreviousVersion"/> to <see cref="TTargetVersion"/>.
+        /// Upgrade model from <see cref="TPreviousVersion"/> to <see cref="TTargetVersion"/>.
         /// </summary>
-        /// <param name="model">The model.</param>
+        /// <param name="model"><see cref="TPreviousVersion"/> model.</param>
         /// <returns></returns>
         protected abstract TTargetVersion UpgradeFunc(TPreviousVersion model);
 
@@ -109,19 +108,7 @@ namespace ModelUpgrade.Core
 
             var chain = Chains[modelType];
 
-            return chain.UpgradeBase(model);
-        }
-
-        /// <summary>
-        /// Upgrades the specified model.
-        /// </summary>
-        /// <param name="model">The model.</param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException">model</exception>
-        /// <exception cref="Exception">Can't convert \"{model.GetType().FullName}\"</exception>
-        public override TTargetVersion Upgrade(object model)
-        {
-            var result = UpgradeBase(model);
+            var result = chain.UpgradeBase(model);
 
             if (result is TPreviousVersion previousVersion)
             {
@@ -129,6 +116,27 @@ namespace ModelUpgrade.Core
             }
 
             throw new Exception($"Can't convert \"{model.GetType().FullName}\"");
+        }
+
+        /// <summary>
+        /// Upgrades the model to <see cref="TTargetVersion"/>.
+        /// </summary>
+        /// <param name="model">The model.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException">model</exception>
+        /// <exception cref="Exception">Can't convert \"{model.GetType().FullName}\"</exception>
+        public override TTargetVersion Upgrade(object model)
+        {
+            return (TTargetVersion)UpgradeBase(model);
+        }
+
+        /// <summary>
+        /// Add <see cref="ModelUpgradeChain&lt;TPreviousVersion&gt;"/> chain.
+        /// </summary>
+        /// <param name="chain">The chain.</param>
+        public void Add(ModelUpgradeChain<TPreviousVersion> chain)
+        {
+            AddBase(chain);
         }
     }
 }
