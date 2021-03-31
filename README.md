@@ -74,20 +74,20 @@ var v3DbModel = converter.Parse(v3ModelFromConvert);
 Must create your upgrade chains to ready.
 
 ```cs
-class MyVersion1To2Upgrade : ModelUpgrade<Version2, Version1>
+class MyVersion1To2Upgrade : ModelUpgrade<Version1, Version2>
 {
     protected override Version2 UpgradeFunc(Version1 model) => new Version2
     {
         Id = model.Uid,
         ProjectName = model.Name
     };
-
+    
     public MyVersion1To2Upgrade() : base(null)
     {
     }
 }
 
-class MyVersion2To3Upgrade : ModelUpgrade<Version3, Version2>
+class MyVersion2To3Upgrade : ModelUpgrade<Version2, Version3>
 {
     protected override Version3 UpgradeFunc(Version2 model) => new Version3
     {

@@ -106,7 +106,7 @@ namespace SampleConsole
         }
     }
 
-    class MyVersion1To2Upgrade : ModelUpgrade<Version2, Version1>
+    class MyVersion1To2Upgrade : ModelUpgrade<Version1, Version2>
     {
         protected override Version2 UpgradeFunc(Version1 model) => new Version2
         {
@@ -119,7 +119,7 @@ namespace SampleConsole
         }
     }
 
-    class MyVersion2To3Upgrade : ModelUpgrade<Version3, Version2>
+    class MyVersion2To3Upgrade : ModelUpgrade<Version2, Version3>
     {
         protected override Version3 UpgradeFunc(Version2 model) => new Version3
         {
@@ -132,7 +132,7 @@ namespace SampleConsole
         }
     }
 
-    class MyVersion3To4Upgrade : ModelUpgrade<Version4, Version3>
+    class MyVersion3To4Upgrade : ModelUpgrade<Version3, Version4>
     {
         protected override Version4 UpgradeFunc(Version3 model) => new Version4
         {
@@ -145,7 +145,7 @@ namespace SampleConsole
         }
     }
 
-    class MyVersion4To5Upgrade : ModelUpgrade<Version5, Version4>
+    class MyVersion4To5Upgrade : ModelUpgrade<Version4, Version5>
     {
         protected override Version5 UpgradeFunc(Version4 model) => new Version5
         {
@@ -158,7 +158,7 @@ namespace SampleConsole
         }
     }
 
-    class MyVersion1To4Upgrade : ModelUpgrade<Version4, Version1>
+    class MyVersion1To4Upgrade : ModelUpgrade<Version1, Version4>
     {
         protected override Version4 UpgradeFunc(Version1 model) => new Version4
         {

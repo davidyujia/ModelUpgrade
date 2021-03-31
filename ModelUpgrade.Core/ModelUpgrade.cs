@@ -76,7 +76,7 @@ namespace ModelUpgrade.Core
         public abstract TTargetVersion Upgrade(object model);
     }
 
-    public abstract class ModelUpgrade<TTargetVersion, TPreviousVersion> : ModelUpgradeChain<TTargetVersion>
+    public abstract class ModelUpgrade<TPreviousVersion, TTargetVersion> : ModelUpgradeChain<TTargetVersion>
     {
         protected ModelUpgrade(ModelUpgradeChain<TPreviousVersion>[] nextChains) : base(typeof(TPreviousVersion), nextChains as ModelUpgradeChain[]) { }
 
