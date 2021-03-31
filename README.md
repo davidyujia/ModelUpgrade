@@ -71,7 +71,7 @@ var v3DbModel = converter.Parse(v3ModelFromConvert);
 
 ## Before upgrade
 
-Must create your upgrade chains to ready.
+Must create your upgrade chains and inheritance `ModelUpgrade<TPreviousVersion, TTargetVersion>` for ready.
 
 ```cs
 class MyVersion1To2Upgrade : ModelUpgrade<Version1, Version2>
@@ -94,7 +94,7 @@ class MyVersion2To3Upgrade : ModelUpgrade<Version2, Version3>
         ProjectId = model.Id,
         ProjectName = model.ProjectName
     };
-    
+
     public MyVersion2To3Upgrade(params ModelUpgradeChain<Version2>[] nextChains) : base(nextChains)
     {
     }
