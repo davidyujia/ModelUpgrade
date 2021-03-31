@@ -14,7 +14,7 @@ namespace ModelUpgrade.Store
         /// </summary>
         /// <param name="model">The model.</param>
         /// <param name="parseFunc">The parse function.</param>
-        public DataModel(IVersionStoreModel model, Func<IVersionStoreModel, string> parseFunc)
+        public DataModel(IVersionModel model, Func<IVersionModel, string> parseFunc)
         {
             Id = model.GetId();
             Data = parseFunc(model);

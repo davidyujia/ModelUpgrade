@@ -12,12 +12,14 @@ namespace SampleConsole
             var v1UpgradeChain = new Version1Upgrade();
             var v2UpgradeChain = new Version2Upgrade(v1UpgradeChain);
 
+            // Sample data.
             var v1Model = new Version1
             {
                 Uid = "TestV1",
                 Name = "Test1"
             };
 
+            // Upgrade sample to latest version
             var v3Model = v2UpgradeChain.Upgrade(v1Model);
 
             // Create a converter.
@@ -32,8 +34,6 @@ namespace SampleConsole
 
             // Parses v3 model to data model for saving.
             var v3DbModel = converter.Parse(v3ModelFromConvert);
-
-            var v3DbModelFormV1Model = converter.Upgrade(v1Model);
         }
     }
 
@@ -76,7 +76,7 @@ namespace SampleConsole
         }
     }
 
-    class Version1 : IVersionStoreModel
+    class Version1 : IVersionModel
     {
         public string GetId()
         {
@@ -92,7 +92,7 @@ namespace SampleConsole
         public string Name { get; set; }
     }
 
-    class Version2 : IVersionStoreModel
+    class Version2 : IVersionModel
     {
         public string GetId()
         {
@@ -107,7 +107,7 @@ namespace SampleConsole
         public string ProjectName { get; set; }
     }
 
-    class Version3 : IVersionStoreModel
+    class Version3 : IVersionModel
     {
         public string GetId()
         {

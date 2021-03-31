@@ -13,11 +13,11 @@ namespace ModelUpgrade.Core
             return _enableUpgradeModelTypeCount;
         }
 
-        internal readonly Dictionary<Type, ModelUpgradeChain> JumpNextChains;
+        internal readonly Dictionary<Type, ModelUpgradeChain> Chains;
 
         protected ModelUpgradeChain(Type previousVersionType, params ModelUpgradeChain[] nextChains)
         {
-            JumpNextChains = new Dictionary<Type, ModelUpgradeChain>();
+            Chains = new Dictionary<Type, ModelUpgradeChain>();
             _enableUpgradeModelTypeCount = new Dictionary<Type, int> { { previousVersionType, 0 } };
 
             if (nextChains == null)
@@ -50,7 +50,7 @@ namespace ModelUpgrade.Core
             if (!_enableUpgradeModelTypeCount.ContainsKey(targetType))
             {
                 _enableUpgradeModelTypeCount.Add(targetType, typeCount);
-                JumpNextChains.Add(targetType, chain);
+                Chains.Add(targetType, chain);
                 return;
             }
 
@@ -60,19 +60,26 @@ namespace ModelUpgrade.Core
             }
 
             _enableUpgradeModelTypeCount[targetType] = typeCount;
-            JumpNextChains[targetType] = chain;
+            Chains[targetType] = chain;
         }
 
-        public abstract IVersionModel Upgrade(IVersionModel model);
+        //public abstract IVersionModel Upgrade(IVersionModel model);
+
+        internal abstract object UpgradeBase(object model);
     }
 
-    public abstract class ModelUpgrade<TTargetVersion, TPreviousVersion> : ModelUpgradeChain
-        where TTargetVersion : IVersionModel
-        where TPreviousVersion : IVersionModel
+    public abstract class ModelUpgradeChain<TTargetVersion> : ModelUpgradeChain
     {
-        protected ModelUpgrade(ModelUpgradeChain[] nextChains) : base(typeof(TPreviousVersion), nextChains)
+        protected ModelUpgradeChain(Type previousVersionType, params ModelUpgradeChain[] nextChains) : base(previousVersionType, nextChains)
         {
         }
+
+        public abstract TTargetVersion Upgrade(object model);
+    }
+
+    public abstract class ModelUpgrade<TTargetVersion, TPreviousVersion> : ModelUpgradeChain<TTargetVersion>
+    {
+        protected ModelUpgrade(ModelUpgradeChain[] nextChains) : base(typeof(TPreviousVersion), nextChains) { }
 
         /// <summary>
         /// Upgrades <see cref="TPreviousVersion"/> to <see cref="TTargetVersion"/>.
@@ -81,35 +88,47 @@ namespace ModelUpgrade.Core
         /// <returns></returns>
         protected abstract TTargetVersion UpgradeFunc(TPreviousVersion model);
 
-        public override IVersionModel Upgrade(IVersionModel model)
+        internal override object UpgradeBase(object model)
         {
-            if (model == null)
+            switch (model)
             {
-                throw new ArgumentNullException(nameof(model));
-            }
-
-            if (model is TPreviousVersion previousVersion1)
-            {
-                return UpgradeFunc(previousVersion1);
+                case null:
+                    throw new ArgumentNullException(nameof(model));
+                case TTargetVersion targetVersion:
+                    return targetVersion;
+                case TPreviousVersion previousVersion1:
+                    return UpgradeFunc(previousVersion1);
             }
 
             var modelType = model.GetType();
 
-            if (!JumpNextChains.ContainsKey(modelType))
+            if (!Chains.ContainsKey(modelType))
             {
-                return model;
+                throw new Exception($"Can't find chain to convert \"{modelType.FullName}\"");
             }
 
-            var chain = JumpNextChains[modelType];
+            var chain = Chains[modelType];
 
-            var upgradedModel = chain.Upgrade(model);
+            return chain.UpgradeBase(model);
+        }
 
-            if (upgradedModel is TPreviousVersion previousVersion2)
+        /// <summary>
+        /// Upgrades the specified model.
+        /// </summary>
+        /// <param name="model">The model.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException">model</exception>
+        /// <exception cref="Exception">Can't convert \"{model.GetType().FullName}\"</exception>
+        public override TTargetVersion Upgrade(object model)
+        {
+            var result = UpgradeBase(model);
+
+            if (result is TPreviousVersion previousVersion)
             {
-                return UpgradeFunc(previousVersion2);
+                return UpgradeFunc(previousVersion);
             }
 
-            return model;
+            throw new Exception($"Can't convert \"{model.GetType().FullName}\"");
         }
     }
 }

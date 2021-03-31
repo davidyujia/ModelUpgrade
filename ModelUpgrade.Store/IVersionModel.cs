@@ -2,7 +2,7 @@
 
 namespace ModelUpgrade.Store
 {
-    public interface IVersionStoreModel : IVersionModel
+    public interface IVersionModel
     {
         /// <summary>
         /// Gets the identifier.

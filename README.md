@@ -1,21 +1,30 @@
 # ModelUpgradeSolution
 
 ```cs
-// You need to create it what inheritance IModelUpgrade
-var modelUpgrade = new YourModelUpgrade();
+// Create a model upgrade chain, this chain must from oldest version to latest version.
+var v1UpgradeChain = new Version1Upgrade();
+var v2UpgradeChain = new Version2Upgrade(v1UpgradeChain);
 
-// Create a converter.
-var converter = new ModelConverter<YourVersion3Model>(modelUpgrade);
-
-// Sample data, it's from database.
-var dbData = new DataModel(new YourVersion1Model
+// Sample data.
+var v1Model = new Version1
 {
     Uid = "TestV1",
     Name = "Test1"
-}, modelUpgrade.Serialize);
+};
+
+// Upgrade sample to latest version
+var v3Model = v2UpgradeChain.Upgrade(v1Model);
+
+// Create a converter.
+var modelSerializer = new MyModelSerializer();
+var converter = new ModelConverter<Version3>(modelSerializer, v2UpgradeChain);
+
+// Sample data, it's from database.
+var v1DbData = new DataModel(v1Model, modelSerializer.Serialize);
 
 // Parses your saved data to the v3 model.
-var v3 = converter.Parse(dbData);
+var v3ModelFromConvert = converter.Parse(v1DbData);
+
 // Parses v3 model to data model for saving.
-var v3DbModel = converter.Parse(v3);
+var v3DbModel = converter.Parse(v3ModelFromConvert);
 ```
