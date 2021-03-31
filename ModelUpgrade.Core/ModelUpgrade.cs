@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using ModelUpgrade.Core.Extensions;
 
 namespace ModelUpgrade.Core
@@ -64,8 +63,6 @@ namespace ModelUpgrade.Core
             Chains[targetType] = chain;
         }
 
-        //public abstract IVersionModel Upgrade(IVersionModel model);
-
         internal abstract object UpgradeBase(object model);
     }
 
@@ -119,12 +116,10 @@ namespace ModelUpgrade.Core
         }
 
         /// <summary>
-        /// Upgrades the model to <see cref="TTargetVersion"/>.
+        /// Upgrades the model to <see cref="TTargetVersion" />.
         /// </summary>
         /// <param name="model">The model.</param>
         /// <returns></returns>
-        /// <exception cref="ArgumentNullException">model</exception>
-        /// <exception cref="Exception">Can't convert \"{model.GetType().FullName}\"</exception>
         public override TTargetVersion Upgrade(object model)
         {
             return (TTargetVersion)UpgradeBase(model);
