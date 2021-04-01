@@ -12,11 +12,34 @@
     <Authors>David</Authors>
     <PackageProjectUrl>https://github.com/davidyujia/ModelUpgrade</PackageProjectUrl>
     <PackageTags>model;upgrade</PackageTags>
-    <Description>Different version model upgrade to the latest version.</Description>
+    <Description>Upgrade different version models to the latest version.</Description>
     <NeutralLanguage>en</NeutralLanguage>
     <RepositoryUrl>https://github.com/davidyujia/ModelUpgrade</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SourceRoot Include="$(MSBuildThisFileDirectory)/"/>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="$(MicrosoftSourceLinkGithub)">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFrameworkMonikerAssemblyAttributesPath>$([System.IO.Path]::Combine('$(IntermediateOutputPath)','$(TargetFrameworkMoniker).AssemblyAttributes$(DefaultLanguageSourceExtension)'))</TargetFrameworkMonikerAssemblyAttributesPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- https://github.com/dotnet/sourcelink/issues/572 -->
+    <EmbeddedFiles Include="$(GeneratedAssemblyInfoFile)"/>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
 </Project>
