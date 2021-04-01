@@ -10,7 +10,7 @@
     <Authors>David</Authors>
     <PackageProjectUrl>https://github.com/davidyujia/ModelUpgrade</PackageProjectUrl>
     <PackageTags>model;upgrade</PackageTags>
-    <Description>Different version model upgrade to the latest version.</Description>
+    <Description>Upgrade different version models to the latest version.</Description>
     <PackageLicenseUrl></PackageLicenseUrl>
     <NeutralLanguage>en</NeutralLanguage>
     <RepositoryUrl>https://github.com/davidyujia/</RepositoryUrl>
