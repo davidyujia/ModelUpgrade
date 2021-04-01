@@ -10,6 +10,7 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Authors>David</Authors>
+    <Copyright>© David 2021</Copyright>
     <PackageProjectUrl>https://github.com/davidyujia/ModelUpgrade</PackageProjectUrl>
     <PackageTags>model;upgrade</PackageTags>
     <Description>Upgrade different version models to the latest version.</Description>
