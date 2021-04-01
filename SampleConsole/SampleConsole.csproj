@@ -6,8 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ModelUpgrade.Core\ModelUpgrade.Core.csproj" />
-    <ProjectReference Include="..\ModelUpgrade.Store\ModelUpgrade.Store.csproj" />
+    <ProjectReference Include="..\ModelUpgrade\ModelUpgrade.csproj" />
   </ItemGroup>
 
 </Project>

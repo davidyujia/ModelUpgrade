@@ -1,18 +1,12 @@
-﻿using System.Text.Json;
-using ModelUpgrade;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace SampleConsole
+namespace ModelUpgrade.Tests
 {
-    class Program
+    [TestClass]
+    public class ModelUpgradeUnitTest
     {
-        static void Main(string[] args)
-        {
-            Upgrade();
-
-            JumpUpgrade();
-        }
-
-        static void Upgrade()
+        [TestMethod]
+        public void UpgradeVersionTest()
         {
             // Create a model upgrade chain, this chain must from oldest version to latest version.
             var v1Upgrade = new MyVersion1To2Upgrade();
@@ -27,21 +21,18 @@ namespace SampleConsole
 
             // Upgrade sample to latest version
             var v3Model = v2Upgrade.Upgrade(v1Model);
+
+            Assert.AreEqual(v1Model.Uid, v3Model.ProjectId);
         }
 
-        static void JumpUpgrade()
+        [TestMethod]
+        public void JumpUpgradeVersionTest()
         {
             // Sample data.
             var v1Model = new Version1
             {
                 Uid = "TestV1",
                 Name = "Test1"
-            };
-
-            var v2Model = new Version2
-            {
-                Id = "TestV2",
-                ProjectName = "Test2",
             };
 
             // Create a model upgrade chain, this chain must from oldest version to latest version.
@@ -58,11 +49,10 @@ namespace SampleConsole
             // v1 model jump upgrade to v5
             var v1ToV5Model = v4Upgrade.Upgrade(v1Model);
 
-            // v2 model upgrade to v5
-            var v2ToV5Model = v4Upgrade.Upgrade(v2Model);
+            Assert.AreEqual(v1Model.Uid, v1ToV5Model.ProjectId);
         }
     }
-
+    
     class MyVersion1To2Upgrade : ModelUpgrade<Version1, Version2>
     {
         protected override Version2 UpgradeFunc(Version1 model) => new Version2
@@ -127,7 +117,7 @@ namespace SampleConsole
         {
         }
     }
-    
+
     class Version1
     {
         public string Uid { get; set; }

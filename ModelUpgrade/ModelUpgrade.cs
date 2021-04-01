@@ -1,20 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
-using ModelUpgrade.Core.Extensions;
+using ModelUpgrade.Extensions;
 
-namespace ModelUpgrade.Core
+namespace ModelUpgrade
 {
+    /// <summary>
+    /// Base model upgrade chain. (DO NOT INHERITANCE THIS)
+    /// </summary>
     public abstract class ModelUpgradeChain
     {
-        private readonly Dictionary<Type, int> _enableUpgradeModelTypeCount;
+        private readonly IDictionary<Type, int> _enableUpgradeModelTypeCount;
 
-        internal Dictionary<Type, int> GetEnableUpgradeModelTypeCount()
+        internal IDictionary<Type, int> GetEnableUpgradeModelTypeCount()
         {
             return _enableUpgradeModelTypeCount;
         }
 
-        internal readonly Dictionary<Type, ModelUpgradeChain> Chains;
+        internal readonly IDictionary<Type, ModelUpgradeChain> Chains;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ModelUpgradeChain"/> class.
+        /// </summary>
+        /// <param name="previousVersionType">Type of the previous version.</param>
+        /// <param name="nextChains">The next chains.</param>
         protected ModelUpgradeChain(Type previousVersionType, params ModelUpgradeChain[] nextChains)
         {
             Chains = new Dictionary<Type, ModelUpgradeChain>();
@@ -66,22 +74,45 @@ namespace ModelUpgrade.Core
         internal abstract object UpgradeBase(object model);
     }
 
+    /// <summary>
+    /// Base model upgrade chain with target version model type. (DO NOT INHERITANCE THIS)
+    /// </summary>
     public abstract class ModelUpgradeChain<TTargetVersion> : ModelUpgradeChain
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ModelUpgradeChain{TTargetVersion}"/> class.
+        /// </summary>
+        /// <param name="previousVersionType">Type of the previous version.</param>
+        /// <param name="nextChains">The next chains.</param>
         protected ModelUpgradeChain(Type previousVersionType, ModelUpgradeChain[] nextChains) : base(previousVersionType, nextChains) { }
 
+        /// <summary>
+        /// Upgrades the model to target version />.
+        /// </summary>
+        /// <param name="model">The model which you'd like upgrade.</param>
+        /// <returns>target version model</returns>
         public abstract TTargetVersion Upgrade(object model);
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <typeparam name="TPreviousVersion">The type of the previous version.</typeparam>
+    /// <typeparam name="TTargetVersion">The type of the target version.</typeparam>
+    /// <seealso cref="ModelUpgrade.ModelUpgradeChain{TTargetVersion}" />
     public abstract class ModelUpgrade<TPreviousVersion, TTargetVersion> : ModelUpgradeChain<TTargetVersion>
     {
-        protected ModelUpgrade(ModelUpgradeChain<TPreviousVersion>[] nextChains) : base(typeof(TPreviousVersion), nextChains as ModelUpgradeChain[]) { }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ModelUpgrade{TPreviousVersion, TTargetVersion}"/> class.
+        /// </summary>
+        /// <param name="nextChains">The next chains.</param>
+        protected ModelUpgrade(ModelUpgradeChain<TPreviousVersion>[] nextChains) : base(typeof(TPreviousVersion), nextChains) { }
 
         /// <summary>
-        /// Upgrade model from <see cref="TPreviousVersion"/> to <see cref="TTargetVersion"/>.
+        /// Upgrade model from previous version to target version />.
         /// </summary>
-        /// <param name="model"><see cref="TPreviousVersion"/> model.</param>
-        /// <returns></returns>
+        /// <param name="model">previous version model.</param>
+        /// <returns>target version model</returns>
         protected abstract TTargetVersion UpgradeFunc(TPreviousVersion model);
 
         internal override object UpgradeBase(object model)
@@ -116,10 +147,10 @@ namespace ModelUpgrade.Core
         }
 
         /// <summary>
-        /// Upgrades the model to <see cref="TTargetVersion" />.
+        /// Upgrades the model to target version />.
         /// </summary>
-        /// <param name="model">The model.</param>
-        /// <returns></returns>
+        /// <param name="model">The model which you'd like upgrade.</param>
+        /// <returns>target version model</returns>
         public override TTargetVersion Upgrade(object model)
         {
             return (TTargetVersion)UpgradeBase(model);
