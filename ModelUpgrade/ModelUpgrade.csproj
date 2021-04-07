@@ -13,7 +13,7 @@
     <Copyright>© David 2021</Copyright>
     <PackageProjectUrl>https://github.com/davidyujia/ModelUpgrade</PackageProjectUrl>
     <PackageTags>model;upgrade</PackageTags>
-    <Description>Upgrade different version models to the latest version.</Description>
+    <Description>Upgrade different custom version models to the latest custom version.</Description>
     <NeutralLanguage>en</NeutralLanguage>
     <RepositoryUrl>https://github.com/davidyujia/ModelUpgrade</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

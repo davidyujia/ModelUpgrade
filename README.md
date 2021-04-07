@@ -1,4 +1,4 @@
-# ModelUpgradeSolution
+# Model Upgrade Solution
 
 ## How to use
 
