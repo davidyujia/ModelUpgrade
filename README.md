@@ -3,6 +3,7 @@
 | NuGet | Build |
 | -- | -- |
 |![Nuget](https://img.shields.io/nuget/v/ModelUpgrade)|![test](https://github.com/davidyujia/ModelUpgrade/actions/workflows/dotnet.yml/badge.svg)|
+
 ## How to use
 
 Upgrade your model to latest version.
