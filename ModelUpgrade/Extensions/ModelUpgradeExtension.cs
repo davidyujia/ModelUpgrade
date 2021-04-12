@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace ModelUpgrade.Extensions
@@ -21,11 +22,22 @@ namespace ModelUpgrade.Extensions
                 return;
             }
 
-            var genericArguments = modelUpgradeChains.Select(modelUpgradeChain => modelUpgradeChain?.GetType().BaseType?.GetGenericArguments() ?? Array.Empty<Type>()).ToArray();
+            var exceptions = modelUpgradeChains
+                .Where(chain => chain.TargetType != previousVersionType)
+                .Select(chain => new ArgumentException($"\"{chain.GetType().FullName}\" can't convert model to \"{previousVersionType.FullName}\"."))
+                .ToList();
 
-            if (genericArguments.Any(lastGenericArguments => lastGenericArguments.Length > 1 && lastGenericArguments[1] != previousVersionType))
+            if (exceptions.Any())
             {
-                throw new ArgumentException($"{modelUpgradeChains.GetType().FullName} can't convert model to \"{previousVersionType.FullName}\".");
+                throw new AggregateException($"Has chain(s) can't convert model to \"{previousVersionType.FullName}\".", exceptions);
+            }
+        }
+
+        internal static void ForEach<T>(this IEnumerable<T> list, Action<T> action)
+        {
+            foreach (var item in list)
+            {
+                action(item);
             }
         }
     }
