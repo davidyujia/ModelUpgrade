@@ -1,8 +1,6 @@
 # Model Upgrade Solution
 
-| NuGet | Build |
-| -- | -- |
-|![Nuget](https://img.shields.io/nuget/v/ModelUpgrade)|![Build](https://github.com/davidyujia/ModelUpgrade/actions/workflows/dotnet.yml/badge.svg)|
+![Nuget](https://img.shields.io/nuget/v/ModelUpgrade) ![Build](https://github.com/davidyujia/ModelUpgrade/actions/workflows/dotnet.yml/badge.svg) [![CodeQL](https://github.com/davidyujia/ModelUpgrade/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/davidyujia/ModelUpgrade/actions/workflows/codeql-analysis.yml)
 
 ## How to use
 
