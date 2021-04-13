@@ -95,17 +95,17 @@ namespace ModelUpgrade
         /// <summary>
         /// Add <see cref="ModelUpgradeBase{TTargetVersion}"/> chain.
         /// </summary>
-        /// <param name="base">The chain.</param>
-        public void Add(ModelUpgradeBase<TPreviousVersion> @base)
+        /// <param name="chain">The chain.</param>
+        public void Add(ModelUpgradeBase<TPreviousVersion> chain)
         {
-            @base.EnableUpgradeModelTypeCount.ForEach(typeCountItem =>
+            chain.EnableUpgradeModelTypeCount.ForEach(typeCountItem =>
             {
                 var typeCount = typeCountItem.Value + 1;
 
                 if (!EnableUpgradeModelTypeCount.ContainsKey(typeCountItem.Key))
                 {
                     EnableUpgradeModelTypeCount.Add(typeCountItem.Key, typeCount);
-                    Chains.Add(typeCountItem.Key, @base);
+                    Chains.Add(typeCountItem.Key, chain);
                     return;
                 }
 
@@ -115,7 +115,7 @@ namespace ModelUpgrade
                 }
 
                 EnableUpgradeModelTypeCount[typeCountItem.Key] = typeCount;
-                Chains[typeCountItem.Key] = @base;
+                Chains[typeCountItem.Key] = chain;
             });
         }
     }
