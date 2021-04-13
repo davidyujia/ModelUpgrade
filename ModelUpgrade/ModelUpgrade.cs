@@ -5,89 +5,22 @@ using ModelUpgrade.Extensions;
 namespace ModelUpgrade
 {
     /// <summary>
-    /// Base model upgrade chain. (DO NOT INHERITANCE THIS)
+    /// Base model upgrade chain with target version model type. (DO NOT INHERITANCE THIS, ONLY FOR FOOLPROOF)
     /// </summary>
-    public abstract class ModelUpgradeChain
+    public abstract class ModelUpgradeBase<TTargetVersion>
     {
         internal readonly IDictionary<Type, int> EnableUpgradeModelTypeCount;
 
-        internal readonly IDictionary<Type, ModelUpgradeChain> Chains;
-
         /// <summary>
-        /// Initializes a new instance of the <see cref="ModelUpgradeChain"/> class.
+        /// Initializes a new instance of the <see cref="ModelUpgradeBase{TTargetVersion}" /> class.
         /// </summary>
         /// <param name="previousVersionType">Type of the previous version.</param>
-        /// <param name="nextChains">The next chains.</param>
-        protected ModelUpgradeChain(Type previousVersionType, ModelUpgradeChain[] nextChains)
+        internal ModelUpgradeBase(Type previousVersionType)
         {
-            SetGenericType();
-            Chains = new Dictionary<Type, ModelUpgradeChain>();
             EnableUpgradeModelTypeCount = new Dictionary<Type, int> { { previousVersionType, 0 } };
-
-            if (nextChains == null)
-            {
-                return;
-            }
-
-            ModelUpgradeExtension.CheckModelUpgradeChain(previousVersionType, nextChains);
-
-            nextChains.ForEach(AddBase);
         }
 
-        private void SetGenericType()
-        {
-            var types = GetType().BaseType?.GetGenericArguments() ?? Array.Empty<Type>();
-
-            if (types.Length != 2)
-            {
-                return;
-            }
-
-            TargetType = types[1];
-            PreviousType = types[0];
-        }
-
-        internal Type TargetType { get; private set; }
-
-        internal Type PreviousType { get; private set; }
-        
-        internal void AddBase(ModelUpgradeChain chain)
-        {
-            chain.EnableUpgradeModelTypeCount.ForEach(typeCountItem =>
-            {
-                var typeCount = typeCountItem.Value + 1;
-
-                if (!EnableUpgradeModelTypeCount.ContainsKey(typeCountItem.Key))
-                {
-                    EnableUpgradeModelTypeCount.Add(typeCountItem.Key, typeCount);
-                    Chains.Add(typeCountItem.Key, chain);
-                    return;
-                }
-
-                if (EnableUpgradeModelTypeCount[typeCountItem.Key] <= typeCount)
-                {
-                    return;
-                }
-
-                EnableUpgradeModelTypeCount[typeCountItem.Key] = typeCount;
-                Chains[typeCountItem.Key] = chain;
-            });
-        }
-        
-        internal abstract object UpgradeBase(object model);
-    }
-
-    /// <summary>
-    /// Base model upgrade chain with target version model type. (DO NOT INHERITANCE THIS, ONLY FOR FOOLPROOF)
-    /// </summary>
-    public abstract class ModelUpgradeChain<TTargetVersion> : ModelUpgradeChain
-    {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ModelUpgradeChain{TTargetVersion}"/> class.
-        /// </summary>
-        /// <param name="previousVersionType">Type of the previous version.</param>
-        /// <param name="nextChains">The next chains.</param>
-        protected ModelUpgradeChain(Type previousVersionType, ModelUpgradeChain[] nextChains) : base(previousVersionType, nextChains) { }
+        internal abstract TTargetVersion UpgradeBase(object model);
     }
 
     /// <summary>
@@ -95,14 +28,21 @@ namespace ModelUpgrade
     /// </summary>
     /// <typeparam name="TPreviousVersion">The type of the previous version.</typeparam>
     /// <typeparam name="TTargetVersion">The type of the target version.</typeparam>
-    /// <seealso cref="ModelUpgradeChain{TTargetVersion}" />
-    public abstract class ModelUpgrade<TPreviousVersion, TTargetVersion> : ModelUpgradeChain<TTargetVersion>
+    /// <seealso cref="ModelUpgradeBase{TTargetVersion}" />
+    public abstract class ModelUpgrade<TPreviousVersion, TTargetVersion> : ModelUpgradeBase<TTargetVersion>
     {
+        internal readonly IDictionary<Type, ModelUpgradeBase<TPreviousVersion>> Chains;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ModelUpgrade{TPreviousVersion, TTargetVersion}"/> class.
         /// </summary>
         /// <param name="nextChains">The next chains.</param>
-        protected ModelUpgrade(ModelUpgradeChain<TPreviousVersion>[] nextChains) : base(typeof(TPreviousVersion), nextChains) { }
+        protected ModelUpgrade(ModelUpgradeBase<TPreviousVersion>[] nextChains) : base(typeof(TPreviousVersion))
+        {
+            Chains = new Dictionary<Type, ModelUpgradeBase<TPreviousVersion>>();
+
+            nextChains?.ForEach(Add);
+        }
 
         /// <summary>
         /// Upgrade model from previous version to target version />.
@@ -111,7 +51,7 @@ namespace ModelUpgrade
         /// <returns>target version model</returns>
         protected abstract TTargetVersion UpgradeFunc(TPreviousVersion model);
 
-        internal override object UpgradeBase(object model)
+        internal sealed override TTargetVersion UpgradeBase(object model)
         {
             switch (model)
             {
@@ -126,7 +66,7 @@ namespace ModelUpgrade
             return UpgradeFromChains(model);
         }
 
-        private object UpgradeFromChains(object model)
+        private TTargetVersion UpgradeFromChains(object model)
         {
             var modelType = model.GetType();
 
@@ -139,7 +79,7 @@ namespace ModelUpgrade
 
             var result = chain.UpgradeBase(model);
 
-            return UpgradeBase(result);
+            return UpgradeFunc(result);
         }
 
         /// <summary>
@@ -149,16 +89,34 @@ namespace ModelUpgrade
         /// <returns>target version model</returns>
         public TTargetVersion Upgrade(object model)
         {
-            return (TTargetVersion)UpgradeBase(model);
+            return UpgradeBase(model);
         }
 
         /// <summary>
-        /// Add <see cref="ModelUpgradeChain&lt;TPreviousVersion&gt;"/> chain.
+        /// Add <see cref="ModelUpgradeBase{TTargetVersion}"/> chain.
         /// </summary>
-        /// <param name="chain">The chain.</param>
-        public void Add(ModelUpgradeChain<TPreviousVersion> chain)
+        /// <param name="base">The chain.</param>
+        public void Add(ModelUpgradeBase<TPreviousVersion> @base)
         {
-            AddBase(chain);
+            @base.EnableUpgradeModelTypeCount.ForEach(typeCountItem =>
+            {
+                var typeCount = typeCountItem.Value + 1;
+
+                if (!EnableUpgradeModelTypeCount.ContainsKey(typeCountItem.Key))
+                {
+                    EnableUpgradeModelTypeCount.Add(typeCountItem.Key, typeCount);
+                    Chains.Add(typeCountItem.Key, @base);
+                    return;
+                }
+
+                if (EnableUpgradeModelTypeCount[typeCountItem.Key] <= typeCount)
+                {
+                    return;
+                }
+
+                EnableUpgradeModelTypeCount[typeCountItem.Key] = typeCount;
+                Chains[typeCountItem.Key] = @base;
+            });
         }
     }
 }

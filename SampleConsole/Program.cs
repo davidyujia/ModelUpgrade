@@ -84,7 +84,7 @@ namespace SampleConsole
             ProjectName = model.ProjectName
         };
 
-        public MyVersion2To3Upgrade(params ModelUpgradeChain<Version2>[] nextChains) : base(nextChains)
+        public MyVersion2To3Upgrade(params ModelUpgradeBase<Version2>[] nextChains) : base(nextChains)
         {
         }
     }
@@ -97,7 +97,7 @@ namespace SampleConsole
             ProjectName = model.ProjectName
         };
 
-        public MyVersion3To4Upgrade(params ModelUpgradeChain<Version3>[] nextChains) : base(nextChains)
+        public MyVersion3To4Upgrade(params ModelUpgradeBase<Version3>[] nextChains) : base(nextChains)
         {
         }
     }
@@ -110,7 +110,7 @@ namespace SampleConsole
             ProjectName = model.ProjectName
         };
 
-        public MyVersion4To5Upgrade(params ModelUpgradeChain<Version4>[] nextChains) : base(nextChains)
+        public MyVersion4To5Upgrade(params ModelUpgradeBase<Version4>[] nextChains) : base(nextChains)
         {
         }
     }
