@@ -1,3 +1,4 @@
+using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ModelUpgrade.Tests
@@ -51,8 +52,33 @@ namespace ModelUpgrade.Tests
 
             Assert.AreEqual(v1Model.Uid, v1ToV5Model.ProjectId);
         }
+
+        [TestMethod]
+        public void CantUpgradeTest()
+        {
+            // Sample data.
+            var unknownModel = new UnknownVersion
+            {
+                Uid = "TestV1",
+                Name = "Test1"
+            };
+
+            var v1Upgrade = new MyVersion1To2Upgrade();
+
+            var message = string.Empty;
+            try
+            {
+                v1Upgrade.Upgrade(unknownModel);
+            }
+            catch (Exception e)
+            {
+                message = e.Message;
+            }
+
+            Assert.AreEqual("Can't find chain to convert \"ModelUpgrade.Tests.UnknownVersion\".", message);
+        }
     }
-    
+
     class MyVersion1To2Upgrade : ModelUpgrade<Version1, Version2>
     {
         protected override Version2 UpgradeFunc(Version1 model) => new Version2
@@ -116,6 +142,12 @@ namespace ModelUpgrade.Tests
         public MyVersion1To4Upgrade() : base(null)
         {
         }
+    }
+
+    class UnknownVersion
+    {
+        public string Uid { get; set; }
+        public string Name { get; set; }
     }
 
     class Version1

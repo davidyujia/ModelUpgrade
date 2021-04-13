@@ -72,7 +72,7 @@ namespace ModelUpgrade
 
             if (!Chains.ContainsKey(modelType))
             {
-                throw new Exception($"Can't find chain to convert \"{modelType.FullName}\"");
+                throw new Exception($"Can't find chain to convert \"{modelType.FullName}\".");
             }
 
             var chain = Chains[modelType];
